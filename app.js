@@ -1,86 +1,78 @@
 var express = require("express"),
+    mongoose = require("mongoose"),
     bodyParser = require("body-parser"),
-    mongoose = require("mongoose");
+    passport = require("passport"),
+    LocalStrategy = require("passport-local"),
+    passportLocalMongoose = require("passport-local-mongoose"),
+    expressSession = require("express-session"),
+    flash = require("connect-flash");
 
-var app = express();
 
+var port = process.env.PORT || 3000;
 
+// importing and using the User and Todo model.
+var User = require("./models/user");
 var Todo = require("./models/todo");
 
+// connecting to database.
+// mongoose.connect("mongodb://localhost/todo_api_user", {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true
+// });
 
-mongoose.connect("mongodb://localhost/todo_api", {
+
+mongoose.connect("mongodb+srv://saalik123:saalik@123@todoapi.apjb2.mongodb.net/saalik123?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
 
-app.use(express.static(__dirname + "/views"));
-app.use(express.static(__dirname + "/public"));
+
+
+var app = express();
+
+
+// PASSPORT SETUP.
+app.use(expressSession({
+    // secret can be anything we want.
+    secret: "Everyone should learn to code. It teaches you how to think.",
+    resave: false,
+    saveUninitialized: false
+}));
+
+passport.use(new LocalStrategy(User.authenticate()));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(User.serializeUser());
+
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.set("view engine", "ejs");
+app.use(flash());
+app.use(express.static(__dirname + "/static"));
+app.use(express.static(__dirname + "/public"));
 
-
-app.get("/", function(req, res) {
-    return res.sendFile("index.html");
-
+app.use(function(req, res, next) {
+    res.locals.error = req.flash("error");
+    next();
 })
 
-// for todo apis 
 
-app.get("/api/todo", function(req, res) {
-    Todo.find({}, function(err, todos) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(todos);
-        }
-    })
+// ROUTES
+var todoRoutes = require("./routes/todos");
+var authRoutes = require("./routes/auth");
 
-})
-
-app.post("/api/todo", function(req, res) {
-    console.log(req.body)
-    Todo.create(req.body, function(err, createdTodo) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(createdTodo);
-        }
-    })
-});
+app.use(todoRoutes);
+app.use(authRoutes);
 
 
-app.get("/api/todo/:id", function(req, res) {
-    Todo.findById(req.params.id, function(err, foundTodo) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(foundTodo);
-        }
-    })
-});
 
 
-app.put("/api/todo/:id", function(req, res) {
-    Todo.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true }, function(err, updatedTodo) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(updatedTodo);
-        }
-    })
-});
-
-app.delete("/api/todo/:id", function(req, res) {
-    Todo.findOneAndDelete({ _id: req.params.id }, function(err) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json({ message: "Todo deleted successfully!" });
-        }
-    })
-});
-
-
-app.listen(3000, function() {
-    console.log("STARTING SERVER AT PORT 3000....!")
+app.listen(port, function() {
+    console.log(`STARTING SERVER AT PORT ${port}....!`)
 });
