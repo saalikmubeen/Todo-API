@@ -15,19 +15,12 @@ var User = require("./models/user");
 var Todo = require("./models/todo");
 
 // connecting to database.
-// mongoose.connect("mongodb://localhost/todo_api_user", {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// });
-
-
-mongoose.connect("mongodb+srv://saalik123:saalik@123@todoapi.apjb2.mongodb.net/saalik123?retryWrites=true&w=majority", {
+mongoose.connect("mongodb://localhost/todo_api_user", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
 
-
-
+s
 var app = express();
 
 
